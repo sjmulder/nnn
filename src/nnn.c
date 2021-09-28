@@ -117,6 +117,10 @@
 #define alloca(size) __builtin_alloca(size)
 #endif
 
+#ifdef __sun
+#define NEED_DPRINTF
+#endif
+
 #include "nnn.h"
 #include "dbg.h"
 
@@ -833,6 +837,25 @@ static void notify_fifo(bool force);
 #endif
 
 /* Functions */
+
+#ifdef NEED_DPRINTF
+static int dprintf(int fd, const char *format, ...)
+{
+	va_list ap;
+	char *s;
+
+	va_start(ap, format);
+	if (vasprintf(&s, format, ap) == -1)
+		{ va_end(ap); return -1; }
+	va_end(ap);
+
+	if (write(fd, s, strlen(s)) == -1)
+		{ free(s); return -1; }
+
+	free(s);
+	return 0;
+}
+#endif
 
 static void sigint_handler(int sig)
 {
